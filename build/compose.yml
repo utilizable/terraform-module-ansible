@@ -1,0 +1,133 @@
+# compose.yml
+
+version: "3.2"
+services:
+
+# ##################
+# COMMON 
+# ##################
+
+  common: &common
+    image: "null"
+    entrypoint: [ "sh", "-c" ]
+    env_file:
+      - "${ENV_FILE}"
+    networks:
+      - shared-network
+
+
+# ##################
+# BACKEND 
+# ##################
+
+# common - minio 
+# ------------------
+
+  backend: &backend
+    <<: *common
+    image: quay.io/minio/minio:RELEASE.2023-11-01T01-57-10Z-cpuv1
+    restart: "no"
+
+# minio - backend
+# ------------------
+
+  backend-core:
+    <<: *backend
+    hostname: "${__backend_host}" 
+    environment:
+      MINIO_ROOT_USER: "${backend_access_key}"
+      MINIO_ROOT_PASSWORD: "${backend_secret_key}"
+      MINIO_ADDRESS: ":${backend_port}"
+    command: 
+      - |
+        minio server /data;
+
+# minio - init bucket
+# ------------------
+
+  backend-init:
+    <<: *backend
+    command: 
+      - |
+        mc alias set backend ${backend_endpoint} ${backend_access_key} ${backend_secret_key}; 
+        mc mb backend/${backend_bucket};
+    depends_on:
+      - 'backend-core'
+
+# ##################
+# TERRAFORM
+# ##################
+
+# common - terraform
+# ------------------
+  terraform: &terraform
+    <<: *common
+    image: hashicorp/terraform:latest
+    working_dir: /app
+    volumes:
+      - ../terraform:/app
+      - tfdata:/tfdata
+
+# terraform - lint 
+# ------------------
+  lint:
+    <<: *terraform
+    container_name: "terraform-fmt"
+    command:
+      - |
+        find ./ -name "*.tf" -exec terraform fmt -diff=true -recursive -write=true {} \;
+
+# terraform - init 
+# ------------------
+  init:
+    <<: *terraform
+    container_name: "terraform-init"
+    command:
+      - |
+        env;
+        terraform init \
+          -backend-config="access_key=${backend_access_key}" \
+          -backend-config="secret_key=${backend_secret_key}" \
+          -backend-config="endpoint=${backend_endpoint}" \
+          -backend-config="key=${backend_key}" \
+          -backend-config="bucket=${backend_bucket}" \
+          -backend-config="region=${backend_region}" \
+          -reconfigure;
+
+# terraform - plan 
+# ------------------
+  plan:
+    <<: *terraform
+    container_name: "terraform-plan"
+    command:
+      - |
+        terraform plan;
+
+# terraform - apply 
+# ------------------
+  apply:
+    <<: *terraform
+    container_name: "terraform-apply"
+    command:
+      - |
+        terraform apply -auto-approve;
+
+# terraform - destroy 
+# ------------------
+  destroy:
+    <<: *terraform
+    container_name: "terraform-destroy"
+    command:
+      - | 
+        terraform destroy -auto-approve;
+
+# ------------------
+# RESOURCES 
+# ------------------
+
+volumes:
+  tfdata:
+
+networks:
+  shared-network:
+    driver: bridge

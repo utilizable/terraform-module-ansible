@@ -1,0 +1,4 @@
+# ./variables.tf
+
+# ROOT - VARIABLES
+# ------------------
