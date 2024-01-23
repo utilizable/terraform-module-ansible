@@ -5,40 +5,27 @@
 
 # install ansible modules 
 resource "null_resource" "requirements" {
-	provisioner "local-exec" {
-		command = <<-EOT
+  provisioner "local-exec" {
+  command = <<-EOT
       if [ -f /ansible/requirements.yml ]; then
-		  	until command ansible-galaxy install -r /ansible/requirements.yml; do
-		  		sleep 5
-		  	done
+	until command ansible-galaxy install -r /ansible/requirements.yml; do
+	  sleep 5
+	done
       fi;
-		EOT
-	}
+  EOT
+  }
 }
-
-# install ansible modules 
-#resource "null_resource" "requirements" {
-#	depends_on = [ null_resource.requirements ]
-#	provisioner "local-exec" {
-#		command = <<-EOT
-#      ansible-playbook           \
-#        ./playbooks/playbook/yml \
-#        --inventory              \
-#        ./inventories/hosts       
-#		EOT
-#	}
-#}
 
 # execute ansible playbook
 resource "ansible_playbook" "playbook-ansible" {
 
-	depends_on = [ null_resource.requirements ]
+   depends_on = [ null_resource.requirements ]
 
   # ------------------
   # required 
 
   # Name of the desired host,
-  name = "anykey.pl"
+  name = "host"
 
   # Path to ansible playbook. 
   playbook = "/ansible/playbooks/playbook.yml"
@@ -46,14 +33,14 @@ resource "ansible_playbook" "playbook-ansible" {
   # ------------------
   # optional 
 
+  # extra configuration passed to ansible-playbook command
   extra_vars = {
     # ansible core
     ansible_user = "root"
     ansible_port = "8005"
     # playbook extras 
-    vm_id = "111"
-
-		ansible_check_mode = true  # <- here
+    vm_id = ""
+    ansible_check_mode = true
   }
 
   # ------------------
