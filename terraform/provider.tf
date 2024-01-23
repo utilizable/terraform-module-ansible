@@ -1,8 +1,6 @@
 # ./provider.tf
 
 # ROOT - PROVIDERS
-# ------------------
+# ------------------A
 
-provider "provider_name" {
-
-}
+terraform {}

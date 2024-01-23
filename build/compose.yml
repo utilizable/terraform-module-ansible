@@ -1,4 +1,4 @@
-# compose.yml
+# ./compose.yml
 
 version: "3.2"
 services:
@@ -9,7 +9,7 @@ services:
 
   common: &common
     image: "null"
-    entrypoint: [ "sh", "-c" ]
+    entrypoint: [ "bash", "-c" ]
     env_file:
       - "${ENV_FILE}"
     networks:
@@ -62,10 +62,15 @@ services:
 # ------------------
   terraform: &terraform
     <<: *common
-    image: hashicorp/terraform:latest
+    #image: hashicorp/terraform:latest
+    image: terraform
+    build:
+      context: .
+      dockerfile: ./Dockerfile
     working_dir: /app
     volumes:
       - ../terraform:/app
+      - ../ansible:/ansible
       - tfdata:/tfdata
 
 # terraform - lint 
@@ -84,15 +89,15 @@ services:
     container_name: "terraform-init"
     command:
       - |
-        env;
-        terraform init \
-          -backend-config="access_key=${backend_access_key}" \
-          -backend-config="secret_key=${backend_secret_key}" \
-          -backend-config="endpoint=${backend_endpoint}" \
-          -backend-config="key=${backend_key}" \
-          -backend-config="bucket=${backend_bucket}" \
-          -backend-config="region=${backend_region}" \
-          -reconfigure;
+        terraform init; 
+#        terraform init \
+#          -backend-config="access_key=${backend_access_key}" \
+#          -backend-config="secret_key=${backend_secret_key}" \
+#          -backend-config="endpoint=${backend_endpoint}" \
+#          -backend-config="key=${backend_key}" \
+#          -backend-config="bucket=${backend_bucket}" \
+#          -backend-config="region=${backend_region}" \
+#          -upgrade;
 
 # terraform - plan 
 # ------------------
@@ -110,7 +115,12 @@ services:
     container_name: "terraform-apply"
     command:
       - |
+        eval $(ssh-agent); 
+        ssh-add - <<< "${TARGET_ID_RSA}";
+        echo "StrictHostKeyChecking no" >> $(find /etc -iname ssh_config)
+
         terraform apply -auto-approve;
+
 
 # terraform - destroy 
 # ------------------

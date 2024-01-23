@@ -1,0 +1,7 @@
+#!/usr/bin/env ansible-playbook
+---
+[]
+#- name: ansible-role-proxmox-vm-seed 
+#  src: https://github.com/utilizable/ansible-role-proxmox-vm-preseeding.git
+#  version: develop 
+...

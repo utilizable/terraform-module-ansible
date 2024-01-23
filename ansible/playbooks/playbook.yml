@@ -1,0 +1,57 @@
+---
+- name: playbook 
+  hosts: all 
+
+  gather_facts: false
+  tasks:
+  - name: Create new container with hookscript and description
+    community.general.proxmox:
+      vmid: 102
+      node: anykey 
+      api_user: root@pam
+      api_password: 9311540 
+      api_host: anykey.pl 
+      password: 9311540 
+      hostname: test 
+      ostemplate: 'local:vztmpl/debian-12-standard_12.2-1_amd64.tar.zst'
+        #hookscript: 'local:snippets/vm_hook.sh'
+      description: created with ansible
+
+  - name: Check if Python is installed on the Proxmox container
+    raw: python3 --version
+    delegate_to: test 
+    ignore_errors: true
+    register: python_check_result
+
+    #  roles:
+    #    - role: ansible-role-proxmox-vm-seed 
+    #
+    #      # required configuration 
+    #      # (auth; target; etc.)
+    #      # ######################
+    #
+    #      required:
+    #        target: 
+    #          vm_node: anykey
+    #          vm_id: 999 
+    #        options:
+    #          release: bookworm  
+    #
+    #      # Seed configuration
+    #      # ######################
+    #
+    #      configuration:
+    #        account:
+    #          password_root: 9311540
+    #        location:
+    #          locale: en_US
+    #        network:
+    #          ip_address: 192.168.1.24 
+    #          netmask: 255.255.255.0 
+    #          gateway: 192.168.1.1 
+    #            # domain: domain.com
+    #          nameserver: 9.9.9.9
+    #        additional_packages:
+    #          - qemu-guest-agent
+    #          - lxd
+    #...

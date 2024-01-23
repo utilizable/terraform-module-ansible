@@ -5,9 +5,10 @@
 
 module "module" {
   // source module
-  source = ""
+  source = "./modules/base"
 
   // pass provider variables to module 
 
   // pass variables to module
 }
+
